@@ -1,0 +1,56 @@
+@startuml
+'https://plantuml.com/object-diagram
+
+object user {
+    id: UUID
+    name: VARCHAR
+    email: VARCHAR
+    password: VARCHAR
+}
+object chat {
+    id: UUID
+    name: VARCHAR
+    type: SMALLINT
+}
+object chat_member {
+    user_id: UUID
+    chat_id: UUID
+}
+user::id ...> chat_member::user_id
+chat::id ----> chat_member::chat_id
+
+object group {
+    id: UUID
+    name: VARCHAR
+    creator_id: UUID
+    chat_id: UUID
+}
+user::id ...> group::creator_id
+chat::id ---> group::chat_id
+
+object user_group {
+    user_id: UUID
+    group_id: UUID
+}
+user::id ...> user_group::user_id
+group::id --> user_group::group_id
+
+object message {
+    id: UUID
+    chat_id: UUID
+    sender_id: UUID
+    text: TEXT
+    timestamp: timestamp with time zone
+    seen: BOOLEAN
+}
+user::id ...> message::sender_id
+chat::id --> message::chat_id
+
+object message_seen_status {
+    user_id: UUID
+    message_id: UUID
+}
+user::id ...> message_seen_status::user_id
+message::id --> message_seen_status::message_id
+
+@enduml
