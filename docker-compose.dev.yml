@@ -1,0 +1,18 @@
+volumes:
+  dev_postgres_storage:
+
+networks:
+  my_messenger_network_dev:
+
+services:
+  db:
+    image: postgres:17.4-alpine
+    container_name: my_messenger_postgres_dev
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    networks:
+      - my_messenger_network_dev
+    volumes:
+      - dev_postgres_storage:/var/lib/postgresql/data
