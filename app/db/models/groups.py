@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List
+from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,12 +20,14 @@ class GroupsModel(Base):
 
     __tablename__ = "groups"
 
-    id: mapped_uuid = mapped_column(default_postgresql_uuid_factory(), primary_key=True)
+    id: mapped_uuid = mapped_column(default_postgresql_uuid_factory(), primary_key=True, default=uuid4)
     name: mapped_str = mapped_column(String(DEFAULT_STRING_LENGTH), nullable=False)
     creator_id: mapped_uuid = mapped_column(
-        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id), nullable=False
+        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), nullable=False
     )
-    chat_id: mapped_uuid = mapped_column(default_postgresql_uuid_factory(), ForeignKey(ChatsModel.id), nullable=False)
+    chat_id: mapped_uuid = mapped_column(
+        default_postgresql_uuid_factory(), ForeignKey(ChatsModel.id, ondelete="CASCADE"), nullable=False
+    )
     user_group: Mapped[List["UserGroupModel"]] = relationship(
         cascade="all, delete-orphan",
         lazy="dynamic",

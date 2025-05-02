@@ -17,6 +17,7 @@ class AppSettings(BaseSettings):
     SQL_DEBUG: bool = False
 
     ALLOWED_ORIGINS: List[str] = Field(default=["*"], validation_alias="ALLOWED_ORIGINS")
+    SECRET_KEY: str
 
 
 settings = AppSettings()  # type: ignore

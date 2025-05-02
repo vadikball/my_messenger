@@ -1,15 +1,14 @@
 """postgres session for SQLAlchemy."""
 
-from asyncio import current_task
 from typing import Callable
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_scoped_session, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool.impl import AsyncAdaptedQueuePool
 
 from app.core.settings import settings
 
 AsyncSessionFactory = Callable[..., AsyncSession]
+session_factory_cache: AsyncSessionFactory | None = None
 
 
 def make_url_async(url: str) -> str:
@@ -28,10 +27,7 @@ engine: AsyncEngine = create_async_engine(make_url_async(settings.POSTGRES_DSN),
 async def build_db_session_factory() -> AsyncSessionFactory:
     await verify_db_connection(engine)
 
-    return async_scoped_session(
-        sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession),  # type: ignore
-        scopefunc=current_task,
-    )
+    return async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
 async def verify_db_connection(db_engine: AsyncEngine) -> None:
