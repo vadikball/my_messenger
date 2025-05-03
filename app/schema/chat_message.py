@@ -1,11 +1,10 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from app.schema.base import BaseFromAttrs
 
 
-class ChatMessage(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class ChatMessage(BaseFromAttrs):
 
     id: UUID
     sender_id: UUID

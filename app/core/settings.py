@@ -11,6 +11,7 @@ class AppSettings(BaseSettings):
 
     # base kwargs
     DEBUG: bool = False
+    APP_HOST: str
 
     # database
     POSTGRES_DSN: str
