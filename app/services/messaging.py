@@ -9,7 +9,7 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from app.containers.web_socket import WebSocketContainer
 from app.core.logger import LoggerBase
-from app.schema.chat_message import ChatMessageIn
+from app.schema.chat_message import ChatMessageBase, ChatMessageIn, ChatMessageSender
 from app.schema.messaging import AuthMessage, MessageProtocolContainer, Notification
 from app.services.abc import MessagingServiceABC
 from app.services.messaging_exception_handlers.abc import MessagingExceptionHandlerABC
@@ -102,7 +102,13 @@ class MessagingService(MessagingServiceABC, LoggerBase):
         await self.send_message(Notification(type="auth_success"), container)
 
     async def process_chat_message(self, message: ChatMessageIn, container: WebSocketContainer) -> None:
-        chat_message_out = await container.messages_repo.create(message)
+        chat_message_out = await container.messages_repo.create(ChatMessageBase(**message.model_dump()))
+        sender_message = ChatMessageSender(
+            id=chat_message_out.id,
+            client_id=message.client_id,
+        )
+
+        self._futures.add(asyncio.create_task(self.send_message(sender_message, container)))
         async for chat_member in container.chat_members_repo.get_members(chat_message_out.chat_id):
             if chat_member.user_id == chat_message_out.sender_id:
                 continue
