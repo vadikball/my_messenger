@@ -3,12 +3,13 @@ import json
 from contextlib import suppress
 from datetime import UTC, datetime
 from functools import partial
+from uuid import uuid4
 
 import websockets
 
 from app.db.models.chats import ChatsModel
 from app.db.models.users import UsersModel
-from app.schema.chat_message import ChatMessageIn, ChatMessageOut
+from app.schema.chat_message import ChatMessageIn, ChatMessageOut, ChatMessageSender
 from app.schema.messaging import AuthMessage, Notification
 
 
@@ -86,32 +87,39 @@ async def test_messages(users_data: list[UsersModel], chats_data: list[ChatsMode
     auth_messages = tuple(create_auth_message_dump(user) for user in users_data)
     chat_messages = (
         ChatMessageIn(
+            client_id=uuid4(),
             sender_id=users_data[0].id,
             chat_id=chats_data[0].id,
             timestamp=datetime.now(tz=UTC),
             text=users_data[2].name,
-        ).model_dump_json(),
+        ),
         ChatMessageIn(
+            client_id=uuid4(),
             sender_id=users_data[1].id,
             chat_id=chats_data[1].id,
             timestamp=datetime.now(tz=UTC),
             text=users_data[3].name,
-        ).model_dump_json(),
+        ),
     )
+    chat_messages_json = tuple(chat_message.model_dump_json() for chat_message in chat_messages)
 
     barriers = (asyncio.Barrier(3), asyncio.Barrier(3))
     futures = asyncio.gather(
-        imitate_chat(app_url, auth_messages[0], chat_messages[0], barriers[0]),
-        imitate_chat(app_url, auth_messages[1], chat_messages[1], barriers[1]),
+        imitate_chat(app_url, auth_messages[0], chat_messages_json[0], barriers[0]),
+        imitate_chat(app_url, auth_messages[1], chat_messages_json[1], barriers[1]),
         imitate_chat(app_url, auth_messages[2], None, barriers[0]),
         imitate_chat(app_url, auth_messages[3], None, barriers[1]),
-        return_exceptions=True,
     )
+
     future_results = await futures
-    assert isinstance(future_results[0], TimeoutError) and isinstance(future_results[1], TimeoutError)
+    assert isinstance(future_results[0], str) and isinstance(future_results[1], str)
     assert isinstance(future_results[2], str) and isinstance(future_results[3], str)
 
     first_success = ChatMessageOut.model_validate_json(json.loads(future_results[2])).text
     second_success = ChatMessageOut.model_validate_json(json.loads(future_results[3])).text
-    assert first_success == users_data[2].name
-    assert second_success == users_data[3].name
+
+    first_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[0])).client_id
+    second_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[1])).client_id
+
+    assert first_success == users_data[2].name and chat_messages[0].client_id == first_client_id
+    assert second_success == users_data[3].name and chat_messages[1].client_id == second_client_id

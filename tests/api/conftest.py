@@ -50,10 +50,6 @@ async def chats_data(faker: Faker, db_session: AsyncSession, users_data: list[Us
         )
         for _ in range(2)
     ]
-
-    async with db_session.begin():
-        db_session.add_all(test_chats)
-
     test_members = [
         ChatMembersModel(
             user_id=users_data[index % 4].id,
@@ -63,6 +59,8 @@ async def chats_data(faker: Faker, db_session: AsyncSession, users_data: list[Us
     ]
 
     async with db_session.begin():
+        db_session.add_all(test_chats)
+        await db_session.flush()
         db_session.add_all(test_members)
 
     return test_chats

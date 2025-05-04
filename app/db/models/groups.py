@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants.base import DEFAULT_STRING_LENGTH
@@ -45,4 +45,4 @@ class UserGroupModel(Base):
     user_id: mapped_uuid = mapped_column(
         default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), primary_key=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
