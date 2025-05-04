@@ -1,6 +1,6 @@
 [project]
 name = "my-messenger"
-version = "0.4.0"
+version = "0.5.0"
 description = "Sample code for a small API that can run a whole messenger"
 authors = [
     {name = "Vadim Goncharov",email = "psinahoi@gmail.com"}
