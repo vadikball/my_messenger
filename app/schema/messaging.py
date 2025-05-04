@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, JsonValue
 
 from app.schema.chat_message import ChatMessageIn
+from app.schema.group import GroupIn
 
 
 class Notification(BaseModel):
@@ -16,4 +17,4 @@ class AuthMessage(BaseModel):
 
 
 class MessageProtocolContainer(BaseModel):
-    message: AuthMessage | ChatMessageIn
+    message: AuthMessage | ChatMessageIn | GroupIn

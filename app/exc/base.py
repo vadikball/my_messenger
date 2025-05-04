@@ -16,3 +16,8 @@ class UserNotFoundException(MessagingException):
 class UserNotAuthenticatedException(MessagingException):
     def json(self) -> JsonValue:
         return '{"detail": "user not authenticated"}'
+
+
+class AccessDeniedException(MessagingException):
+    def json(self) -> JsonValue:
+        return '{"detail": "access denied"}'

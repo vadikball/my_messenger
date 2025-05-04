@@ -1,6 +1,6 @@
 import asyncio
 from functools import partial
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable, Iterator
 from uuid import UUID
 from weakref import WeakSet
 
@@ -9,7 +9,9 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from app.containers.web_socket import WebSocketContainer
 from app.core.logger import LoggerBase
+from app.exc.base import AccessDeniedException
 from app.schema.chat_message import ChatMessageBase, ChatMessageIn, ChatMessageSender
+from app.schema.group import GroupIn
 from app.schema.messaging import AuthMessage, MessageProtocolContainer, Notification
 from app.services.abc import MessagingServiceABC
 from app.services.messaging_exception_handlers.abc import MessagingExceptionHandlerABC
@@ -92,6 +94,9 @@ class MessagingService(MessagingServiceABC, LoggerBase):
             case ChatMessageIn():
                 await self.process_chat_message(message, container)
 
+            case GroupIn():
+                await self.process_new_group(message, container)
+
             case _:
                 raise NotImplementedError
 
@@ -107,8 +112,8 @@ class MessagingService(MessagingServiceABC, LoggerBase):
             id=chat_message_out.id,
             client_id=message.client_id,
         )
+        self.send_message_task(sender_message, container)
 
-        self._futures.add(asyncio.create_task(self.send_message(sender_message, container)))
         async for chat_member in container.chat_members_repo.get_members(chat_message_out.chat_id):
             if chat_member.user_id == chat_message_out.sender_id:
                 continue
@@ -117,10 +122,28 @@ class MessagingService(MessagingServiceABC, LoggerBase):
             if user_connection is None:
                 continue
 
-            self._futures.add(asyncio.create_task(self.send_message(chat_message_out, user_connection)))
+            self.send_message_task(chat_message_out, user_connection)
 
         self.logger.debug(str(chat_message_out))
+
+    async def process_new_group(self, message: GroupIn, container: WebSocketContainer) -> None:
+        if container.user_id is None:
+            raise AccessDeniedException
+
+        new_group = await container.groups_service.create_group(message, container.user_id)
+        for user_connection in self.user_connections_by_ids(user.user_id for user in new_group.user_group):
+            self.send_message_task(new_group, user_connection)
 
     async def send_message(self, message: BaseModel, container: WebSocketContainer) -> None:
         await container.websocket.send_json(message.model_dump_json())
         self.logger.debug(str(message))
+
+    def send_message_task(self, message: BaseModel, container: WebSocketContainer) -> asyncio.Task:
+        task = asyncio.create_task(self.send_message(message, container))
+        self._futures.add(task)
+        return task
+
+    def user_connections_by_ids(self, user_ids: Iterable[UUID]) -> Iterator[WebSocketContainer]:
+        for user_id in user_ids:
+            if user_connection := self._user_connections.get(user_id):
+                yield user_connection

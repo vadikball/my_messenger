@@ -10,7 +10,9 @@ import websockets
 from app.db.models.chats import ChatsModel
 from app.db.models.users import UsersModel
 from app.schema.chat_message import ChatMessageIn, ChatMessageOut, ChatMessageSender
+from app.schema.group import GroupIn, GroupOut
 from app.schema.messaging import AuthMessage, Notification
+from tests.types import GroupLoaderType, MessageLoaderType
 
 
 async def wait_message(client: websockets.ClientConnection, barrier: asyncio.Barrier) -> str:
@@ -82,7 +84,9 @@ def create_auth_message_dump(user: UsersModel) -> str:
     return AuthMessage(email=user.email, password=user.password).model_dump_json()
 
 
-async def test_messages(users_data: list[UsersModel], chats_data: list[ChatsModel], app_url: str) -> None:
+async def test_messages(
+    users_data: list[UsersModel], chats_data: list[ChatsModel], app_url: str, message_loader: MessageLoaderType
+) -> None:
 
     auth_messages = tuple(create_auth_message_dump(user) for user in users_data)
     chat_messages = (
@@ -112,14 +116,45 @@ async def test_messages(users_data: list[UsersModel], chats_data: list[ChatsMode
     )
 
     future_results = await futures
-    assert isinstance(future_results[0], str) and isinstance(future_results[1], str)
-    assert isinstance(future_results[2], str) and isinstance(future_results[3], str)
 
-    first_success = ChatMessageOut.model_validate_json(json.loads(future_results[2])).text
-    second_success = ChatMessageOut.model_validate_json(json.loads(future_results[3])).text
+    success = (
+        ChatMessageOut.model_validate_json(json.loads(future_results[2])),
+        ChatMessageOut.model_validate_json(json.loads(future_results[3])),
+    )
 
     first_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[0])).client_id
     second_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[1])).client_id
 
-    assert first_success == users_data[2].name and chat_messages[0].client_id == first_client_id
-    assert second_success == users_data[3].name and chat_messages[1].client_id == second_client_id
+    assert success[0].text == users_data[2].name
+    assert chat_messages[0].client_id == first_client_id
+    assert success[1].text == users_data[3].name
+    assert chat_messages[1].client_id == second_client_id
+
+    messages_in_db = await asyncio.gather(message_loader(success[0].id), message_loader(success[1].id))
+
+    assert messages_in_db[0] and messages_in_db[1]
+
+
+async def test_new_group(users_data: list[UsersModel], app_url: str, group_loader: GroupLoaderType) -> None:
+    auth_messages = tuple(create_auth_message_dump(user) for user in users_data[:2])
+
+    group_message = GroupIn(name="test chat", users=[user.id for user in users_data]).model_dump_json()
+
+    barrier = asyncio.Barrier(3)
+
+    futures = asyncio.gather(
+        imitate_chat(app_url, auth_messages[0], group_message, barrier),
+        imitate_chat(app_url, auth_messages[1], None, barrier),
+        connect_websocket(app_url, group_message),
+    )
+
+    future_results = await futures
+
+    group = GroupOut.model_validate_json(json.loads(future_results[0]))
+
+    assert GroupOut.model_validate_json(json.loads(future_results[1]))
+    assert Notification.model_validate_json(json.loads(future_results[2])) == Notification(
+        type="error", detail='{"detail": "access denied"}'
+    )
+
+    assert await group_loader(group.id)

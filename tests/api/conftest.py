@@ -1,17 +1,19 @@
 from datetime import UTC
 from typing import AsyncGenerator
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from faker.proxy import Faker
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.chats import ChatMembersModel, ChatsModel
+from app.db.models.groups import GroupsModel
 from app.db.models.messages import MessagesModel
 from app.db.models.users import UsersModel
 from app.db.session import build_db_session_factory
 from app.schema.chat_message import ChatMessageHistoryOut
+from tests.types import GroupLoaderType, MessageLoaderType
 
 
 @pytest.fixture
@@ -85,3 +87,19 @@ async def history_data(
         db_session.add_all(test_messages)
 
     return [ChatMessageHistoryOut.model_validate(message) for message in test_messages]
+
+
+@pytest.fixture
+def message_loader(db_session: AsyncSession) -> MessageLoaderType:
+    async def loader(message_id: UUID) -> MessagesModel | None:  # noqa: WPS430
+        return await db_session.scalar(select(MessagesModel).where(MessagesModel.id == message_id))
+
+    return loader
+
+
+@pytest.fixture
+def group_loader(db_session: AsyncSession) -> GroupLoaderType:
+    async def loader(group_id: UUID) -> GroupsModel | None:  # noqa: WPS430
+        return await db_session.scalar(select(GroupsModel).where(GroupsModel.id == group_id))
+
+    return loader

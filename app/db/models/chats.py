@@ -11,27 +11,27 @@ from app.db.models.base import default_postgresql_uuid_factory, mapped_str, mapp
 from app.db.models.users import UsersModel
 
 
+class ChatMembersModel(Base):
+    __tablename__ = "chat_members"
+
+    chat_id: mapped_uuid = mapped_column(
+        default_postgresql_uuid_factory(), ForeignKey("chats.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: mapped_uuid = mapped_column(
+        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class ChatsModel(Base):
     __tablename__ = "chats"
 
     id: mapped_uuid = mapped_column(default_postgresql_uuid_factory(), primary_key=True, default=uuid4)
     name: mapped_str = mapped_column(String(DEFAULT_STRING_LENGTH), nullable=False)
     type: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    chat_members: Mapped[List["ChatMembersModel"]] = relationship(
+    chat_members: Mapped[List[ChatMembersModel]] = relationship(
         cascade="all, delete-orphan",
         lazy="dynamic",
         passive_deletes=True,
-        order_by="chat_members.created_at",
+        order_by=ChatMembersModel.created_at,
     )
-
-
-class ChatMembersModel(Base):
-    __tablename__ = "chat_members"
-
-    chat_id: mapped_uuid = mapped_column(
-        default_postgresql_uuid_factory(), ForeignKey(ChatsModel.id, ondelete="CASCADE"), primary_key=True
-    )
-    user_id: mapped_uuid = mapped_column(
-        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), primary_key=True
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

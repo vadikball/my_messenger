@@ -7,6 +7,7 @@ from fastapi import WebSocket
 from app.db.repositories.chats import ChatMembersRepo
 from app.db.repositories.messages import MessagesRepo
 from app.services.auth import AuthService
+from app.services.group import GroupsService
 
 
 @dataclass()
@@ -14,6 +15,7 @@ class WebSocketContainer:
     auth_service: AuthService
     messages_repo: MessagesRepo
     chat_members_repo: ChatMembersRepo
+    groups_service: GroupsService
 
     websocket: WebSocket
 

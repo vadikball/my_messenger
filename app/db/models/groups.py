@@ -12,6 +12,18 @@ from app.db.models.chats import ChatsModel
 from app.db.models.users import UsersModel
 
 
+class UserGroupModel(Base):
+    __tablename__ = "user_group"
+
+    group_id: mapped_uuid = mapped_column(
+        default_postgresql_uuid_factory(), ForeignKey("groups.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: mapped_uuid = mapped_column(
+        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
 class GroupsModel(Base):
     """
     Groups Model.
@@ -28,21 +40,9 @@ class GroupsModel(Base):
     chat_id: mapped_uuid = mapped_column(
         default_postgresql_uuid_factory(), ForeignKey(ChatsModel.id, ondelete="CASCADE"), nullable=False
     )
-    user_group: Mapped[List["UserGroupModel"]] = relationship(
+    user_group: Mapped[List[UserGroupModel]] = relationship(
         cascade="all, delete-orphan",
         lazy="dynamic",
         passive_deletes=True,
-        order_by="user_group.created_at",
+        order_by=UserGroupModel.created_at,
     )
-
-
-class UserGroupModel(Base):
-    __tablename__ = "user_group"
-
-    group_id: mapped_uuid = mapped_column(
-        default_postgresql_uuid_factory(), ForeignKey(GroupsModel.id, ondelete="CASCADE"), primary_key=True
-    )
-    user_id: mapped_uuid = mapped_column(
-        default_postgresql_uuid_factory(), ForeignKey(UsersModel.id, ondelete="CASCADE"), primary_key=True
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
