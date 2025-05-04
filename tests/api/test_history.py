@@ -2,14 +2,14 @@ from datetime import datetime
 
 from httpx import AsyncClient
 
-from app.schema.chat_message import ChatMessage
+from app.schema.chat_message import ChatMessageHistoryOut
 
 
-def message_sort(message: ChatMessage) -> datetime:
+def message_sort(message: ChatMessageHistoryOut) -> datetime:
     return message.timestamp
 
 
-async def test_history(app_client: AsyncClient, history_data: list[ChatMessage]) -> None:
+async def test_history(app_client: AsyncClient, history_data: list[ChatMessageHistoryOut]) -> None:
     sorted_history = sorted(history_data[::2], key=message_sort)
     first_chat_messages = [message.model_dump(mode="json") for message in sorted_history]
 

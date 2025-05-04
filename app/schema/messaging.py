@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel, JsonValue
+
+from app.schema.chat_message import ChatMessageIn
 
 
 class Notification(BaseModel):
@@ -13,13 +13,6 @@ class Notification(BaseModel):
 class AuthMessage(BaseModel):
     email: str
     password: str
-
-
-class ChatMessageIn(BaseModel):
-    sender_id: UUID
-    chat_id: UUID
-    text: str
-    timestamp: datetime
 
 
 class MessageProtocolContainer(BaseModel):

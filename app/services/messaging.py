@@ -4,15 +4,14 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 from weakref import WeakSet
 
-from fastapi import WebSocket
 from pydantic import BaseModel
 from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from app.containers.web_socket import WebSocketContainer
 from app.core.logger import LoggerBase
+from app.schema.chat_message import ChatMessageIn
 from app.schema.messaging import AuthMessage, MessageProtocolContainer, Notification
 from app.services.abc import MessagingServiceABC
-from app.services.auth import AuthService
 from app.services.messaging_exception_handlers.abc import MessagingExceptionHandlerABC
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class MessagingService(MessagingServiceABC, LoggerBase):
-    _user_connections: dict[UUID, WebSocketContainer]
+    _user_connections: dict[UUID, WebSocketContainer]  # TODO add support for multiple containers
     _events: WeakSet[asyncio.Event]
     _futures: WeakSet[asyncio.Future]
 
@@ -32,18 +31,11 @@ class MessagingService(MessagingServiceABC, LoggerBase):
         self._user_connections = {}
         self._exc_handlers = exc_handlers
 
-    async def connect(self, websocket: WebSocket, auth_service: AuthService) -> WebSocketContainer:
-        accept_future = asyncio.gather(websocket.accept())
-        await asyncio.sleep(0)
-
-        container = WebSocketContainer(auth_service, websocket)
-
-        await accept_future
-        return container
+    async def connect(self, container: WebSocketContainer) -> None:
+        self._events.add(container.event)
+        await container.websocket.accept()
 
     async def keep(self, container: WebSocketContainer) -> None:
-        self._events.add(container.event)
-
         message_handler = self.wait_messages
         for exc_handler in self._exc_handlers[::-1]:
             message_handler = partial(exc_handler.message_handle, self, message_handler)
@@ -88,9 +80,6 @@ class MessagingService(MessagingServiceABC, LoggerBase):
         self.logger.debug("got message")
         return message
 
-    async def wait_future(self, future: asyncio.Future) -> None:
-        await future
-
     async def process_message(
         self, protocol_container: MessageProtocolContainer, container: WebSocketContainer
     ) -> None:
@@ -100,6 +89,9 @@ class MessagingService(MessagingServiceABC, LoggerBase):
             case AuthMessage():
                 await self.process_auth(message, container)
 
+            case ChatMessageIn():
+                await self.process_chat_message(message, container)
+
             case _:
                 raise NotImplementedError
 
@@ -108,6 +100,20 @@ class MessagingService(MessagingServiceABC, LoggerBase):
         container.user_id = user_data.id
         self._user_connections[user_data.id] = container
         await self.send_message(Notification(type="auth_success"), container)
+
+    async def process_chat_message(self, message: ChatMessageIn, container: WebSocketContainer) -> None:
+        chat_message_out = await container.messages_repo.create(message)
+        async for chat_member in container.chat_members_repo.get_members(chat_message_out.chat_id):
+            if chat_member.user_id == chat_message_out.sender_id:
+                continue
+
+            user_connection = self._user_connections.get(chat_member.user_id)
+            if user_connection is None:
+                continue
+
+            self._futures.add(asyncio.create_task(self.send_message(chat_message_out, user_connection)))
+
+        self.logger.debug(str(chat_message_out))
 
     async def send_message(self, message: BaseModel, container: WebSocketContainer) -> None:
         await container.websocket.send_json(message.model_dump_json())

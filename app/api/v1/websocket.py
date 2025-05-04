@@ -1,13 +1,14 @@
-from fastapi import APIRouter, WebSocket
+from fastapi import APIRouter
 
-from app.api.v1.dependencies.services import AuthServiceDependencyType, MessagingServiceDependencyType
+from app.api.v1.dependencies.container import WebSocketContainerDependencyType
+from app.api.v1.dependencies.services import MessagingServiceDependencyType
 
 router = APIRouter()
 
 
 @router.websocket("/ws")
 async def websocket_endpoint(
-    websocket: WebSocket, messaging_service: MessagingServiceDependencyType, auth_service: AuthServiceDependencyType
+    container: WebSocketContainerDependencyType, messaging_service: MessagingServiceDependencyType
 ) -> None:
-    container = await messaging_service.connect(websocket, auth_service)
+    await messaging_service.connect(container)
     await messaging_service.keep(container)
