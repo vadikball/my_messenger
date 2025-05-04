@@ -27,3 +27,7 @@ class ChatMessageOut(BaseFromAttrs, ChatMessageBase):
 
 class ChatMessageHistoryOut(ChatMessageOut):
     seen: bool
+
+
+class MessageSeen(BaseModel):
+    message_id: UUID

@@ -8,8 +8,9 @@ from uuid import uuid4
 import websockets
 
 from app.db.models.chats import ChatsModel
+from app.db.models.messages import MessagesModel
 from app.db.models.users import UsersModel
-from app.schema.chat_message import ChatMessageIn, ChatMessageOut, ChatMessageSender
+from app.schema.chat_message import ChatMessageIn, ChatMessageOut, ChatMessageSender, MessageSeen
 from app.schema.group import GroupIn, GroupOut
 from app.schema.messaging import AuthMessage, Notification
 from tests.types import GroupLoaderType, MessageLoaderType
@@ -38,17 +39,39 @@ async def connect_websocket(app_url: str, data_to_send: str) -> str:
         return (await futures)[0]
 
 
-async def imitate_chat(app_url: str, auth_message: str, chat_message: str | None, chat_barrier: asyncio.Barrier) -> str:
+async def imitate_chat(app_url: str, auth_message: str, message: str | None, chat_barrier: asyncio.Barrier) -> str:
     async with websockets.connect(app_url) as web_socket:
         barrier = asyncio.Barrier(2)
         futures = asyncio.gather(wait_message(web_socket, barrier), send_message(web_socket, auth_message, barrier))
         await futures
 
         wait_future = asyncio.gather(wait_message(web_socket, chat_barrier))
-        if chat_message is not None:
-            await send_message(web_socket, chat_message, chat_barrier)
+        if message is not None:
+            await send_message(web_socket, message, chat_barrier)
 
-        return (await asyncio.wait_for(wait_future, 0.5))[0]
+        collected_message = (await asyncio.wait_for(wait_future, 0.3))[0]
+        doubled_message = None
+        with suppress(TimeoutError):
+            doubled_message = await asyncio.wait_for(wait_message(web_socket, chat_barrier), 0.3)
+
+        assert doubled_message is None
+
+        return collected_message
+
+
+async def imitate_seen(app_url: str, auth_message: str, message: str, chat_barrier: asyncio.Barrier) -> None:
+    async with websockets.connect(app_url) as web_socket:
+        barrier = asyncio.Barrier(2)
+        futures = asyncio.gather(wait_message(web_socket, barrier), send_message(web_socket, auth_message, barrier))
+        await futures
+
+        await send_message(web_socket, message, chat_barrier)
+
+        doubled_message = None
+        with suppress(TimeoutError):
+            doubled_message = await asyncio.wait_for(wait_message(web_socket, chat_barrier), 0.3)
+
+        assert doubled_message is None
 
 
 async def test_websocket(users_data: list[UsersModel], app_url: str) -> None:
@@ -109,15 +132,15 @@ async def test_messages(
 
     barriers = (asyncio.Barrier(3), asyncio.Barrier(3))
     futures = asyncio.gather(
-        imitate_chat(app_url, auth_messages[0], chat_messages_json[0], barriers[0]),
-        imitate_chat(app_url, auth_messages[1], chat_messages_json[1], barriers[1]),
-        imitate_chat(app_url, auth_messages[2], None, barriers[0]),
-        imitate_chat(app_url, auth_messages[3], None, barriers[1]),
+        imitate_chat(app_url, auth_messages[0], chat_messages_json[0], chat_barrier=barriers[0]),
+        imitate_chat(app_url, auth_messages[1], chat_messages_json[1], chat_barrier=barriers[1]),
+        imitate_chat(app_url, auth_messages[2], None, chat_barrier=barriers[0]),
+        imitate_chat(app_url, auth_messages[3], None, chat_barrier=barriers[1]),
     )
 
     future_results = await futures
 
-    success = (
+    success_messages = (
         ChatMessageOut.model_validate_json(json.loads(future_results[2])),
         ChatMessageOut.model_validate_json(json.loads(future_results[3])),
     )
@@ -125,12 +148,14 @@ async def test_messages(
     first_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[0])).client_id
     second_client_id = ChatMessageSender.model_validate_json(json.loads(future_results[1])).client_id
 
-    assert success[0].text == users_data[2].name
+    assert success_messages[0].text == users_data[2].name
     assert chat_messages[0].client_id == first_client_id
-    assert success[1].text == users_data[3].name
+    assert success_messages[1].text == users_data[3].name
     assert chat_messages[1].client_id == second_client_id
 
-    messages_in_db = await asyncio.gather(message_loader(success[0].id), message_loader(success[1].id))
+    messages_in_db = await asyncio.gather(
+        message_loader(success_messages[0].id), message_loader(success_messages[1].id)
+    )
 
     assert messages_in_db[0] and messages_in_db[1]
 
@@ -143,8 +168,8 @@ async def test_new_group(users_data: list[UsersModel], app_url: str, group_loade
     barrier = asyncio.Barrier(3)
 
     futures = asyncio.gather(
-        imitate_chat(app_url, auth_messages[0], group_message, barrier),
-        imitate_chat(app_url, auth_messages[1], None, barrier),
+        imitate_chat(app_url, auth_messages[0], group_message, chat_barrier=barrier),
+        imitate_chat(app_url, auth_messages[1], None, chat_barrier=barrier),
         connect_websocket(app_url, group_message),
     )
 
@@ -158,3 +183,25 @@ async def test_new_group(users_data: list[UsersModel], app_url: str, group_loade
     )
 
     assert await group_loader(group.id)
+
+
+async def test_seen_status(
+    users_data: list[UsersModel], app_url: str, message_loader: MessageLoaderType, seen_status_data: MessagesModel
+) -> None:
+    auth_messages = tuple(create_auth_message_dump(user) for user in users_data)
+
+    seen_message = MessageSeen(message_id=seen_status_data.id).model_dump_json()
+
+    barrier = asyncio.Barrier(5)
+    futures = asyncio.gather(
+        imitate_chat(app_url, auth_messages[0], seen_message, chat_barrier=barrier),
+        imitate_seen(app_url, auth_messages[1], seen_message, chat_barrier=barrier),
+        imitate_seen(app_url, auth_messages[2], seen_message, chat_barrier=barrier),
+        imitate_seen(app_url, auth_messages[3], seen_message, chat_barrier=barrier),
+    )
+
+    future_results = await futures
+    success_notification = Notification.model_validate_json(json.loads(future_results[0]))
+    message = ChatMessageOut.model_validate_json(success_notification.detail)  # type: ignore
+    message_from_db = ChatMessageOut.model_validate(await message_loader(seen_status_data.id))
+    assert message == message_from_db

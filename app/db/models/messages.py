@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
@@ -30,6 +30,11 @@ class MessagesModel(Base):
     )
     chat: Mapped[ChatsModel] = relationship(
         uselist=False,
+    )
+    message_seen_status: Mapped[List["MessageStatusModel"]] = relationship(
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+        passive_deletes=True,
     )
 
 

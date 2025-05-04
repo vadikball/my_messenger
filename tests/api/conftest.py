@@ -8,7 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.chats import ChatMembersModel, ChatsModel
-from app.db.models.groups import GroupsModel
+from app.db.models.groups import GroupsModel, UserGroupModel
 from app.db.models.messages import MessagesModel
 from app.db.models.users import UsersModel
 from app.db.session import build_db_session_factory
@@ -87,6 +87,52 @@ async def history_data(
         db_session.add_all(test_messages)
 
     return [ChatMessageHistoryOut.model_validate(message) for message in test_messages]
+
+
+@pytest.fixture
+async def seen_status_data(db_session: AsyncSession, users_data: list[UsersModel], faker: Faker) -> MessagesModel:
+    sender_id = users_data[0].id
+
+    chat = ChatsModel(
+        id=uuid4(),
+        name=faker.name(),
+        type=1,
+    )
+    test_members = [
+        ChatMembersModel(
+            user_id=users_data[index % 4].id,
+            chat_id=chat.id,
+        )
+        for index in range(4)
+    ]
+
+    group_id = uuid4()
+    group_name = faker.name()
+    group = GroupsModel(id=group_id, name=group_name, chat_id=chat.id, creator_id=sender_id)
+
+    user_group = [
+        UserGroupModel(
+            user_id=users_data[index % 4].id,
+            group_id=group.id,
+        )
+        for index in range(4)
+    ]
+    message = MessagesModel(
+        text=faker.text(200),
+        seen=False,
+        timestamp=faker.date_time_this_month(tzinfo=UTC),
+        chat=chat,
+        sender=users_data[0],
+    )
+
+    async with db_session.begin():
+        db_session.add(chat)
+        await db_session.flush()
+        db_session.add_all([*test_members, group])
+        await db_session.flush()
+        db_session.add_all([*user_group, message])
+
+    return message
 
 
 @pytest.fixture

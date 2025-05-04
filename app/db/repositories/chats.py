@@ -16,12 +16,12 @@ class ChatsRepo(RepoABC[ChatsModel, ChatOut]):
             name=chat.name,
             type=chat.type.value,
         )
-        self._session.add(chat_from_db)
-        await self._session.flush((chat_from_db,))
-        chat_members = [ChatMembersModel(user_id=user_id, chat_id=chat_from_db.id) for user_id in chat.users]
-        self._session.add_all(chat_members)
+        async with self.transaction():
+            self._session.add(chat_from_db)
+            await self._session.flush((chat_from_db,))
+            chat_members = [ChatMembersModel(user_id=user_id, chat_id=chat_from_db.id) for user_id in chat.users]
+            self._session.add_all(chat_members)
 
-        await self._session.commit()
         return ChatOut(
             id=chat_from_db.id,
             name=chat.name,

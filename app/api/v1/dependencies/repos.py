@@ -1,3 +1,4 @@
+from asyncio import Lock
 from typing import Annotated, Callable
 
 from fastapi import Depends
@@ -13,10 +14,11 @@ from app.db.repositories.users import UsersRepo
 
 def repo_deps_factory[RepoType: RepoABC](
     repo_type: type[RepoType], deps_name: str
-) -> Callable[[AsyncSession], RepoType]:
+) -> Callable[[tuple[AsyncSession, Lock]], RepoType]:
 
-    def new_repo_deps(session: AsyncSessionDependencyType) -> RepoType:  # noqa: WPS430
-        return repo_type(session)
+    def new_repo_deps(session_lock: AsyncSessionDependencyType) -> RepoType:  # noqa: WPS430
+        session, lock = session_lock
+        return repo_type(session, lock)
 
     new_repo_deps.__name__ = deps_name
 

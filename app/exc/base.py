@@ -21,3 +21,8 @@ class UserNotAuthenticatedException(MessagingException):
 class AccessDeniedException(MessagingException):
     def json(self) -> JsonValue:
         return '{"detail": "access denied"}'
+
+
+class WebSocketDisconnectException(MessagingException):
+    def json(self) -> JsonValue:
+        return '{"detail": "diconnected"}'
