@@ -1,0 +1,24 @@
+networks:
+  my_messenger_network_test:
+
+services:
+  test_app:
+    image: my_messenger_test:latest
+    container_name: my_messenger_test_app_dev
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - path: .env
+        required: true
+    networks:
+      - my_messenger_network_test
+
+  db:
+    image: postgres:17.4-alpine
+    container_name: my_messenger_postgres_dev
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    networks:
+      - my_messenger_network_test

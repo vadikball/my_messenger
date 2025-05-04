@@ -1,0 +1,5 @@
+FROM my_messenger_test:latest
+
+COPY fake_data.json ./
+
+CMD sh "scripts/test_fake.sh"

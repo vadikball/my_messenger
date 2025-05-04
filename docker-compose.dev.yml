@@ -5,6 +5,19 @@ networks:
   my_messenger_network_dev:
 
 services:
+  app:
+    image: my_messenger_dev:latest
+    container_name: my_messenger_app_dev
+    command: ["sh", "scripts/start_fake.sh"]
+
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    env_file:
+      - path: .env
+        required: true
+    networks:
+      - my_messenger_network_dev
+
   db:
     image: postgres:17.4-alpine
     container_name: my_messenger_postgres_dev

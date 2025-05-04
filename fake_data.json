@@ -1,0 +1,176 @@
+{
+    "users": [
+        {
+            "email": "nicholecarroll@example.com",
+            "name": "James Calhoun",
+            "password": "!0Wtg",
+            "id": "d61d47bb-2cd2-4c1d-8975-938263836086"
+        },
+        {
+            "email": "georgelee@example.net",
+            "name": "Vincent Thompson",
+            "password": "@5Ap#",
+            "id": "599e25c1-693d-4620-9abf-fde1dda5d426"
+        },
+        {
+            "email": "laura20@example.com",
+            "name": "Jason Wong",
+            "password": "_6KyV",
+            "id": "ef642621-024a-4db6-9ab2-5304c6e6221d"
+        },
+        {
+            "email": "ewatts@example.net",
+            "name": "Samantha Richardson",
+            "password": "+8Nby",
+            "id": "5804d97d-0fff-4444-8647-1345d5f42175"
+        }
+    ],
+    "chats": [
+        {
+            "name": "Door.",
+            "id": "27784f95-d0e0-478d-b224-f718fe2da52c",
+            "type": 0
+        },
+        {
+            "name": "Number.",
+            "id": "6dd93564-eb66-45b7-888b-86ad6b4079d6",
+            "type": 1
+        },
+        {
+            "name": "Bit room.",
+            "id": "6aa93e81-fefe-4b8f-812c-af1a50b077ec",
+            "type": 0
+        },
+        {
+            "name": "Prove.",
+            "id": "3833f4e4-b1e7-4b47-b1ba-d10157b446bb",
+            "type": 1
+        }
+    ],
+    "chat_members": [
+        {
+            "user_id": "d61d47bb-2cd2-4c1d-8975-938263836086",
+            "chat_id": "27784f95-d0e0-478d-b224-f718fe2da52c"
+        },
+        {
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "chat_id": "27784f95-d0e0-478d-b224-f718fe2da52c"
+        },
+        {
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "chat_id": "6dd93564-eb66-45b7-888b-86ad6b4079d6"
+        },
+        {
+            "user_id": "5804d97d-0fff-4444-8647-1345d5f42175",
+            "chat_id": "6dd93564-eb66-45b7-888b-86ad6b4079d6"
+        },
+        {
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "chat_id": "6dd93564-eb66-45b7-888b-86ad6b4079d6"
+        },
+        {
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "chat_id": "6aa93e81-fefe-4b8f-812c-af1a50b077ec"
+        },
+        {
+            "user_id": "5804d97d-0fff-4444-8647-1345d5f42175",
+            "chat_id": "6aa93e81-fefe-4b8f-812c-af1a50b077ec"
+        },
+        {
+            "user_id": "d61d47bb-2cd2-4c1d-8975-938263836086",
+            "chat_id": "3833f4e4-b1e7-4b47-b1ba-d10157b446bb"
+        },
+        {
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "chat_id": "3833f4e4-b1e7-4b47-b1ba-d10157b446bb"
+        },
+        {
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "chat_id": "3833f4e4-b1e7-4b47-b1ba-d10157b446bb"
+        },
+        {
+            "user_id": "5804d97d-0fff-4444-8647-1345d5f42175",
+            "chat_id": "3833f4e4-b1e7-4b47-b1ba-d10157b446bb"
+        }
+    ],
+    "groups": [
+        {
+            "name": "Car.",
+            "id": "0b98ae88-a05c-4ee5-b24c-80012393fd43",
+            "creator_id": "d61d47bb-2cd2-4c1d-8975-938263836086",
+            "chat_id": "6dd93564-eb66-45b7-888b-86ad6b4079d6"
+        },
+        {
+            "name": "West.",
+            "id": "dadf4d3c-ccf8-443d-ad7d-7dafca692fbd",
+            "creator_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "chat_id": "6aa93e81-fefe-4b8f-812c-af1a50b077ec"
+        }
+    ],
+    "user_group": [
+        {
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "group_id": "0b98ae88-a05c-4ee5-b24c-80012393fd43"
+        },
+        {
+            "user_id": "5804d97d-0fff-4444-8647-1345d5f42175",
+            "group_id": "0b98ae88-a05c-4ee5-b24c-80012393fd43"
+        },
+        {
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "group_id": "0b98ae88-a05c-4ee5-b24c-80012393fd43"
+        },
+        {
+            "user_id": "d61d47bb-2cd2-4c1d-8975-938263836086",
+            "group_id": "dadf4d3c-ccf8-443d-ad7d-7dafca692fbd"
+        },
+        {
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "group_id": "dadf4d3c-ccf8-443d-ad7d-7dafca692fbd"
+        },
+        {
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d",
+            "group_id": "dadf4d3c-ccf8-443d-ad7d-7dafca692fbd"
+        },
+        {
+            "user_id": "5804d97d-0fff-4444-8647-1345d5f42175",
+            "group_id": "dadf4d3c-ccf8-443d-ad7d-7dafca692fbd"
+        }
+    ],
+    "messages": [
+        {
+            "id": "9d5a44c4-3115-477b-83da-f7c8b4f34896",
+            "sender_id": "d61d47bb-2cd2-4c1d-8975-938263836086",
+            "chat_id": "27784f95-d0e0-478d-b224-f718fe2da52c",
+            "timestamp": "2025-05-04 04:45:50+00:00",
+            "seen": true,
+            "text": "Congress information message. Information recognize face. Form according toward evidence quite everybody."
+        },
+        {
+            "id": "b0b47faf-fafc-4447-b983-a3cc88a4eb5f",
+            "sender_id": "599e25c1-693d-4620-9abf-fde1dda5d426",
+            "chat_id": "6dd93564-eb66-45b7-888b-86ad6b4079d6",
+            "timestamp": "2025-05-02 11:38:24+00:00",
+            "seen": false,
+            "text": "Behind use anything part build stuff save every. Social land rise.\nBillion thing fly you experience. Data someone evening happen write yes. Five threat after deep property identify."
+        }
+    ],
+    "message_seen_status": [
+        {
+            "message_id": "9d5a44c4-3115-477b-83da-f7c8b4f34896",
+            "user_id": "d61d47bb-2cd2-4c1d-8975-938263836086"
+        },
+        {
+            "message_id": "9d5a44c4-3115-477b-83da-f7c8b4f34896",
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426"
+        },
+        {
+            "message_id": "b0b47faf-fafc-4447-b983-a3cc88a4eb5f",
+            "user_id": "599e25c1-693d-4620-9abf-fde1dda5d426"
+        },
+        {
+            "message_id": "b0b47faf-fafc-4447-b983-a3cc88a4eb5f",
+            "user_id": "ef642621-024a-4db6-9ab2-5304c6e6221d"
+        }
+    ]
+}

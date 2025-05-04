@@ -1,6 +1,6 @@
 [project]
 name = "my-messenger"
-version = "0.7.0"
+version = "0.8.0"
 description = "Sample code for a small API that can run a whole messenger"
 authors = [
     {name = "Vadim Goncharov",email = "psinahoi@gmail.com"}
@@ -15,11 +15,6 @@ dependencies = [
     "pydantic-settings (>=2.9.1,<3.0.0)",
     "alembic (>=1.15.2,<2.0.0)",
     "fastapi[standard] (>=0.115.12,<0.116.0)",
-    "pytest (>=8.3.5,<9.0.0)",
-    "faker (>=37.1.0,<38.0.0)",
-    "httpx (>=0.28.1,<0.29.0)",
-    "pytest-asyncio (>=0.26.0,<0.27.0)",
-    "asgi-lifespan (>=2.1.0,<3.0.0)",
     "loguru (>=0.7.3,<0.8.0)",
 ]
 license = "MIT"
@@ -29,12 +24,26 @@ license = "MIT"
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.poetry]
+packages = [
+    { include = "app" },
+    { include = "tests" },
+]
+
+[project.scripts]
+populate = "app.commands.fake_data_command:add_fake_to_db"
+create_json = "app.commands.fake_data_command:create_json"
+
 [tool.poetry.group.dev.dependencies]
 wemake-python-styleguide = "^1.1.0"
 black = "^25.1.0"
 isort = "^6.0.1"
 mypy = "^1.15.0"
 autoflake = "^2.3.1"
+pytest = "^8.3.5"
+pytest-asyncio = "^0.26.0"
+asgi-lifespan = "^2.1.0"
+faker = "^37.1.0"
 
 [tool.mypy]
 disallow_untyped_defs = true

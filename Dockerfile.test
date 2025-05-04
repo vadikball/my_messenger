@@ -1,0 +1,7 @@
+FROM my_messenger:latest
+
+ENV UVICORN_CMD_ARGS=""
+
+RUN poetry install --only dev
+
+CMD sh "scripts/test.sh"
