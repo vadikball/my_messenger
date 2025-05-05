@@ -8,8 +8,8 @@ services:
   app:
     image: my_messenger_dev:latest
     container_name: my_messenger_app_dev
-    command: ["sh", "scripts/start_fake.sh"]
-
+    depends_on:
+      - db
     ports:
       - "${APP_PORT}:${APP_PORT}"
     env_file:
