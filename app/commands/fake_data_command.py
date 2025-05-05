@@ -1,15 +1,14 @@
 import asyncio
 import json
 import sys
-import traceback
 from datetime import UTC, datetime
 from functools import partial
 from typing import Any
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 from faker import Faker
 
-from app.db.models.chats import ChatsModel, ChatMembersModel
+from app.db.models.chats import ChatMembersModel, ChatsModel
 from app.db.models.groups import GroupsModel, UserGroupModel
 from app.db.models.messages import MessagesModel, MessageStatusModel
 from app.db.models.users import UsersModel
@@ -29,7 +28,8 @@ def create_json(json_file_name: str = "fake_data.json") -> None:
             "name": faker.name(),
             "password": faker.password(5),
             "id": str(uuid4()),
-        } for _ in range(4)
+        }
+        for _ in range(4)
     ]
 
     chats = [
@@ -37,7 +37,8 @@ def create_json(json_file_name: str = "fake_data.json") -> None:
             "name": faker.text(10),
             "id": str(uuid4()),
             "type": index % 2,
-        } for index in range(4)
+        }
+        for index in range(4)
     ]
 
     chat_members = [
@@ -85,22 +86,11 @@ def create_json(json_file_name: str = "fake_data.json") -> None:
             "user_id": users[3]["id"],
             "chat_id": chats[3]["id"],
         },
-
     ]
 
     groups = [
-        {
-            "name": faker.text(10),
-            "id": str(uuid4()),
-            "creator_id": users[0]["id"],
-            "chat_id": chats[1]["id"]
-        },
-        {
-            "name": faker.text(10),
-            "id": str(uuid4()),
-            "creator_id": users[2]["id"],
-            "chat_id": chats[2]["id"]
-        },
+        {"name": faker.text(10), "id": str(uuid4()), "creator_id": users[0]["id"], "chat_id": chats[1]["id"]},
+        {"name": faker.text(10), "id": str(uuid4()), "creator_id": users[2]["id"], "chat_id": chats[2]["id"]},
     ]
 
     user_group = [
@@ -207,18 +197,37 @@ async def populate_db(json_file_name: str = "fake_data.json") -> None:
 
     convert_primary = partial(convert_id, "id")
 
-
     async with session_maker() as session:
         session.add_all([UsersModel(**convert_primary(entity=user)) for user in db_fake_data["users"]])
         session.add_all([ChatsModel(**convert_primary(entity=chat)) for chat in db_fake_data["chats"]])
         await session.commit()
-        session.add_all([GroupsModel(**convert_primary("creator_id", entity=group)) for group in db_fake_data["groups"]])
-        session.add_all([ChatMembersModel(**convert_id( "user_id", "chat_id", entity=chat_member)) for chat_member in db_fake_data["chat_members"]])
-        session.add_all([MessagesModel(**convert_date("timestamp", entity=convert_primary("sender_id", entity=message))) for message in db_fake_data["messages"]])
-        await session.commit()
-        session.add_all([UserGroupModel(**convert_id( "user_id", "group_id", entity=user_group)) for user_group in db_fake_data["user_group"]])
         session.add_all(
-            [MessageStatusModel(**convert_id( "user_id", "message_id", entity=message_seen_status)) for message_seen_status in db_fake_data["message_seen_status"]]
+            [GroupsModel(**convert_primary("creator_id", entity=group)) for group in db_fake_data["groups"]]
+        )
+        session.add_all(
+            [
+                ChatMembersModel(**convert_id("user_id", "chat_id", entity=chat_member))
+                for chat_member in db_fake_data["chat_members"]
+            ]
+        )
+        session.add_all(
+            [
+                MessagesModel(**convert_date("timestamp", entity=convert_primary("sender_id", entity=message)))
+                for message in db_fake_data["messages"]
+            ]
+        )
+        await session.commit()
+        session.add_all(
+            [
+                UserGroupModel(**convert_id("user_id", "group_id", entity=user_group))
+                for user_group in db_fake_data["user_group"]
+            ]
+        )
+        session.add_all(
+            [
+                MessageStatusModel(**convert_id("user_id", "message_id", entity=message_seen_status))
+                for message_seen_status in db_fake_data["message_seen_status"]
+            ]
         )
         await session.commit()
 

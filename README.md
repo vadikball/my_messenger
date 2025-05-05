@@ -13,6 +13,8 @@ Sample code for a small API that can run a whole messenger
 
 Тестовые данные можно увидеть в [файле](fake_data.json)
 
+Схему моделей базы данных можно увидеть в [файле plantUML](docs/models.puml)
+
 # Команды
 
 > Перед применением команд необходимо заполнить .env файл из [примера](example.env)
@@ -42,6 +44,23 @@ sh compose_tests.sh
 6. Ожидание
 
 ## Дополнительные команды проекта:
+
+Установить зависимости:
+```bash
+pip install poetry
+poetry install
+```
+
+Накатить миграции:
+```bash
+alembic upgrade head
+```
+
+Запустить приложение в режиме разработки:
+```bash
+fastapi dev app/main.py
+```
+
 Команда для загрузки данных в базу:
 ```bash
 poetry run populate
